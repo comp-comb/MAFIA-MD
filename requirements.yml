@@ -1,7 +1,7 @@
 name: aroCount
 dependencies:
   - python=3.7
-  - rdkit::rdkit
+  - rdkit::rdkit=2020.03.2
   - pip
   - pip:
     - pandas>=1.0.3
