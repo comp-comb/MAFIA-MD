@@ -17,6 +17,7 @@ matplotlib.use('TkAgg')
 matplotlib.interactive(True)
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+from matplotlib.ticker import PercentFormatter
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 
 import os
@@ -24,6 +25,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from scipy.spatial import distance_matrix
+from scipy import stats
 from numpy import linalg as LA
 
 from collections import OrderedDict
@@ -47,23 +49,74 @@ def export_fringeSpacingHist(points, file) :
     # Creating dataset
     b = np.unique(np.concatenate(surface_normal, axis=0), axis=0)
     # Creating plot
-    fig = plt.figure(figsize=(10, 5))
+    # fig = plt.figure(figsize=(10, 5))
+    try:
+        kde = stats.gaussian_kde(a,weights=np.ones(len(a)) / len(a))
 
-    plt.hist(a, bins=[3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75, 5, 5.25, 5.5, 5.75, 6],
-             width=0.15, align="mid")
+        xx = np.linspace(3, 6, 1000)
 
-    fig.patch.set_facecolor('white')
-    axisbg = '#ababab'
-    plt.title(file.split('.')[0])
-    plt.xlabel('Fringe Spacing (Å)')
-    plt.ylabel('Number of Fringes')
-    xtick = (np.arange(3, 6.25, step=0.25))
-    plt.xticks(fontsize=14)
-    plt.xticks(xtick)
-    # saving the plot to the output folder
-    fig.savefig(e7.get() + '/' + e11.get() + '-Fringe_Spacing_Hist-' + file.split('.')[0] + '.png', format='png',
-                dpi=600)
-    plt.close(fig)
+        fig, ax = plt.subplots(figsize=(10, 5))
+        density, bins, _ = ax.hist(a,  weights=np.ones(len(a)) / len(a), bins=[3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75, 5, 5.25, 5.5, 5.75, 6],
+                 width=0.15, align="mid")
+        count, _ = np.histogram (a,bins)
+
+        for x, y, num in zip(bins, density, count) :
+            if num != 0 :
+                plt.text(x+0.05, y + 0.001, num, fontsize=10, rotation=0)  # x,y,str
+
+        plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+
+        ax2 = ax.twinx()
+
+        ax2.plot(xx, kde(xx), '--', color='red')
+
+        fig.patch.set_facecolor('white')
+        axisbg = '#ababab'
+        ax.set_title(file.split('.')[0])
+        ax.set_xlabel('Fringe Spacing (Å)')
+        ax.set_ylabel('Percentage of Fringes')
+        ax2.set_ylabel('Kernel Density Estimation (KDE)\n of the Distribution', color='red')
+        xtick = (np.arange(3, 6.25, step=0.25))
+        plt.xticks(fontsize=14)
+        ax.set_xticks(xtick)
+        # saving the plot to the output folder
+        fig.savefig(e7.get() + '/' + e11.get() + '-Fringe_Spacing_Hist-' + file.split('.')[0] + '.png', format='png',
+                    dpi=600, transparent=True)
+        # fig.show()
+        plt.close(fig)
+    except ValueError: # required because KDE estimation do not work when there is fringe only in one bin
+
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+        density, bins, _ = ax.hist(a,  weights=np.ones(len(a)) / len(a), bins=[3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75, 5, 5.25, 5.5, 5.75, 6],
+                 width=0.15, align="mid")
+        count, _ = np.histogram (a,bins)
+
+        for x, y, num in zip(bins, density, count) :
+            if num != 0 :
+                plt.text(x+0.05, y + 0.001, num, fontsize=10, rotation=0)  # x,y,str
+
+        plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+
+
+
+        fig.patch.set_facecolor('white')
+        axisbg = '#ababab'
+        ax.set_title(file.split('.')[0])
+        ax.set_xlabel('Fringe Spacing (Å)')
+        ax.set_ylabel('Percentage of Fringes')
+
+        xtick = (np.arange(3, 6.25, step=0.25))
+        plt.xticks(fontsize=14)
+        ax.set_xticks(xtick)
+        # saving the plot to the output folder
+        fig.savefig(e7.get() + '/' + e11.get() + '-Fringe_Spacing_Hist-' + file.split('.')[0] + '.png', format='png',
+                    dpi=600, transparent=True)
+        # fig.show()
+        plt.close(fig)
+
+
+
 
 
 def direction_vector(a, b) :  # unit vector perpendicular to vector a and b
@@ -76,11 +129,38 @@ def direction_vector(a, b) :  # unit vector perpendicular to vector a and b
 
     return (unit_vector)
 
+def cross_product(a, b) :
+    cross_product = a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]
+    return cross_product
+
+def dot_product(a, b) :
+    dot_product = a[1] * b[1] + a[0] * b[0] * a[2] * b[2]
+    return dot_product
 
 def vector_angle(a, b) :  # angle between vector a and b
-    return np.absolute(
-        180 * (1 / np.pi) * np.arccos((a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (LA.norm(a) * LA.norm(b))))
+    # May cause some warning sometimes: RuntimeWarning: invalid value encountered in arccos
+    # This is because of the internal algorithm used for calculating the norm carries some round off error
+    # For details: https://github.com/davidsandberg/facenet/issues/692
+    # Therefore, the rounded off values are clipped at the limit [-1,1]
 
+    return np.absolute(
+        180 * (1 / np.pi) * np.arccos(np.clip((a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (LA.norm(a) * LA.norm(b)),-1,1)))
+
+def angle(a, b) :  # angle between vector a and b
+    a = np.absolute(
+        180 * (1 / np.pi) * np.arccos(np.clip(((a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (LA.norm(a) * LA.norm(b))),-1,1)))
+    if a >= 90:
+        return 180-a
+    else:
+        return a
+def mean_surface_vector(n_vertices, coord):
+    mini_surface_vector=[]
+    center = np.mean(coord,axis=0)
+    mini_surface_vector.append(direction_vector(center-coord[n_vertices-1], center-coord[0]))
+    for i in range(n_vertices-1):
+        mini_surface_vector.append(direction_vector(center-coord[i], center-coord[i+1]))
+    mean_surface_vector=np.mean(mini_surface_vector,axis=0)
+    return mean_surface_vector
 
 def fringe_spacing_data(planar_ring, distance) :
     points = []
@@ -92,9 +172,19 @@ def fringe_spacing_data(planar_ring, distance) :
             radius = distance[index]
             space.append(radius)
 
+        # coord = np.asarray(space)
+        # points.append(np.mean(coord, axis=0))
+        # surface_vector.append(direction_vector(coord[2] - coord[0], coord[4] - coord[1]))
+        #
+        # pointlist.append(points)
+        # surface_normal.append(surface_vector)
+
+        n_vertices = np.asarray(space).shape[0]
+
         coord = np.asarray(space)
         points.append(np.mean(coord, axis=0))
-        surface_vector.append(direction_vector(coord[2] - coord[0], coord[4] - coord[1]))
+
+        surface_vector.append(mean_surface_vector(n_vertices, coord))
 
         pointlist.append(points)
         surface_normal.append(surface_vector)
@@ -113,14 +203,13 @@ def fringe_spacing(pointlist, surface_normal, file) :
         return False
     # calculation of fringe spacing: angle between planes is less than 10º and 3<=distance<=6
     for i in range(len(points)) :
-        for j in range(len(points) - 1) :
-            if i < j + 1 :
-                if 3 <= np.absolute(LA.norm(points[j + 1] - points[i])) <= 6 :
-                    if (vector_angle(surface_vector[j + 1], surface_vector[i]) <= 10) or (
-                            170 <= vector_angle(surface_vector[j + 1], surface_vector[i])) :
-                        print(np.absolute(LA.norm(points[j + 1] - points[i])), '\t',
-                              vector_angle(surface_vector[j + 1], surface_vector[i]))
-                        fringeSpacing.append(np.absolute(LA.norm(points[j + 1] - points[i])))
+        for j in range(i+1,len(points) - 1) :
+            if 3 <= np.absolute(LA.norm(points[j + 1] - points[i])) <= 6 :
+                if (vector_angle(surface_vector[j + 1], surface_vector[i]) <= 10) or (
+                        170 <= vector_angle(surface_vector[j + 1], surface_vector[i])) :
+                    print(np.absolute(LA.norm(points[j + 1] - points[i])), '\t',
+                          vector_angle(surface_vector[j + 1], surface_vector[i]))
+                    fringeSpacing.append(np.absolute(LA.norm(points[j + 1] - points[i])))
 
     if len(fringeSpacing) > 0 :
         export_fringeSpacingHist(fringeSpacing, file)
@@ -265,18 +354,22 @@ class FindRing :
     # Check and return if 4 points are in a plane
     # Plane allowance is the maximum deviation in degrees that is allowed during plane calculation
     def planar_check(self, x1, y1, z1, x2, y2, z2, x3, y3, z3, x, y, z) :
-        a1 = x2 - x1
-        b1 = y2 - y1
-        c1 = z2 - z1
-        a2 = x3 - x1
-        b2 = y3 - y1
-        c2 = z3 - z1
-        a = b1 * c2 - b2 * c1
-        b = a2 * c1 - a1 * c2
-        c = a1 * b2 - b1 * a2
-        d = (- a * x1 - b * y1 - c * z1)
-        return abs(a * x + b * y + c * z + d) <= np.cos(np.pi * (90 - self.planeAllowance) / 180) * np.sqrt(
-            x ** 2 + y ** 2 + z ** 2)
+        # a1 = x2 - x1
+        # b1 = y2 - y1
+        # c1 = z2 - z1
+        # a2 = x3 - x1
+        # b2 = y3 - y1
+        # c2 = z3 - z1
+        # a = b1 * c2 - b2 * c1
+        # b = a2 * c1 - a1 * c2
+        # c = a1 * b2 - b1 * a2
+        # d = (- a * x1 - b * y1 - c * z1)
+        # return abs(a * x + b * y + c * z + d) <= np.cos(np.pi * (90 - self.planeAllowance) / 180) * np.sqrt(
+        #     x ** 2 + y ** 2 + z ** 2)
+        # The above is wrong
+
+        return angle(cross_product([x2-x1,y2-y1,z2-z1],[x3-x1,y3-y1,z3-z1]),cross_product([x2-x,y2-y,z2-z],[x3-x,y3-y,z3-z]))<=self.planeAllowance
+
 
     # Check and Return if one cycle is a subset of others (gives idea about molecular rings)
     # molecular rings: rings that contains smaller aromatic rings, e.g. Naphthalene is a molecular ring that has two Benzene rings
@@ -302,7 +395,7 @@ class FindRing :
         print("Total Aromatic Carbon: \t", len(result))
         print("Total Aliphatic Carbon Number: \t", data.shape[0] - len(result))
         print("Total Existing Rings\t", aromatic_count)
-        print("Total Planar Rings\t", plane_count)
+        # print("Total Planar Rings\t", plane_count)
         # print("Total Molecular Rings\t", molecular_count)
         print("Percentage of Aromatic components\t:", len(result) / data.shape[0])
         print("Percentage of Aliphatic components\t:", 1 - len(result) / data.shape[0])
@@ -354,7 +447,7 @@ class FindRing :
         print("Total Aromatic Carbon: \t", len(result))
         print("Total Aliphatic Carbon Number: \t", data.shape[0] - len(result))
         print("Total Existing Rings\t", aromatic_count)
-        print("Total Planar Rings\t", plane_count)
+        # print("Total Planar Rings\t", plane_count)
         # print("Total Molecular Rings\t", molecular_count)
         print("Percentage of Aromatic components\t:", len(result) / data.shape[0])
         print("Percentage of Aliphatic components\t:", 1 - len(result) / data.shape[0])
@@ -572,7 +665,7 @@ class FindRing :
                         break
                 if plane :  # Filtering planar rings
                     planar_ring.append(rings)
-            fringe_spacing_data(planar_ring, distance)
+            # fringe_spacing_data(ring_array, distance)
 
             # index list
             if var2.get() :  # Imposing the planar condition on ring count statistics
@@ -581,12 +674,14 @@ class FindRing :
                         coordinates = distance[index]
                         cord.append(np.asarray(coordinates))
                     Indices = pd.DataFrame(np.asarray(cord))
+                fringe_spacing_data(planar_ring, distance)
             else :
                 for rings in ring_array :
                     for index in rings :
                         coordinates = distance[index]
                         cord.append(np.asarray(coordinates))
                     Indices = pd.DataFrame(np.asarray(cord))
+                fringe_spacing_data(ring_array, distance)
             # index list
 
             r = {}
@@ -1080,20 +1175,20 @@ Label(master,
 Label(master,
       text="Bond Distance (Upper)").grid(row=1)
 Label(master,
-      text="Cluster Size (for Sanity Check)").grid(row=2)
+      text="Bin Size (for Sanity Check)").grid(row=2)
 Label(master,
       text="Span").grid(row=3)
 Label(master,
-      text="Axis (for Sanity Check)").grid(row=4)
+      text="Direction (for Sanity Check)").grid(row=4)
 
 Label(master,
-      text="Separator").grid(row=7)
+      text="Input Separator").grid(row=7)
 Label(master,
-      text="Extension").grid(row=8)
+      text="File Extension").grid(row=8)
 Label(master,
-      text="Input Files").grid(row=9)
+      text="Input Directory").grid(row=9)
 Label(master,
-      text="Output Files ").grid(row=10)
+      text="Output Directory ").grid(row=10)
 Label(master,
       text="(e.g. 100)").grid(row=2, column=2)
 Label(master,
@@ -1102,10 +1197,10 @@ Label(master,
       text='(e.g. \\t,comma(,),space,:, etc.)').grid(row=7, column=2)
 Label(master,
       text="(e.g. .xyz, .csv etc.)").grid(row=8, column=2)
-Label(master,
-      text="Plane Allowance (in degree)").grid(row=5)
-Label(master,
-      text="(e.g. 1, 2 , 3 etc.)").grid(row=5, column=2)
+# Label(master,
+#       text="Plane Allowance (in degree)").grid(row=5)
+# Label(master,
+#       text="(e.g. 1, 2 , 3 etc.)").grid(row=5, column=2)
 Label(master,
       text="Identifier").grid(row=11, column=0)
 Label(master,
@@ -1114,9 +1209,9 @@ Label(master,
 # standalone chemistry
 
 Label(master,
-      text="standalone input directory").grid(row=17)
+      text="Chemistry Only Input Directory").grid(row=17)
 Label(master,
-      text="standalone output directory ").grid(row=18)
+      text="Chemistry Only Output Directory").grid(row=18)
 
 # standalone chemistry
 
@@ -1130,7 +1225,7 @@ axisin.grid(column=1, row=4)
 axisin.current(0)
 
 v1 = StringVar(master, value='1.2')
-v2 = StringVar(master, value='2')
+v2 = StringVar(master, value='1.8')
 v3 = StringVar(master, value='100')
 v4 = StringVar(master, value='8')
 v6 = StringVar(master,
@@ -1139,7 +1234,8 @@ v7 = StringVar(master,
                value='/Users/khaledmosharrafmukut/tweaks/MDRING/pyCharm/output')
 v8 = StringVar(master, value='space')
 v9 = StringVar(master, value='.xyz')
-v10 = StringVar(master, value='2')
+v10 = StringVar(master, value='10')
+
 v11 = StringVar(master, value='Result')
 
 # standalone chemistry:start
@@ -1171,7 +1267,7 @@ e3.grid(row=2, column=1)
 e4.grid(row=3, column=1)
 e8.grid(row=7, column=1)
 e9.grid(row=8, column=1)
-e10.grid(row=5, column=1)
+# e10.grid(row=5, column=1)   #planar allowance angle
 e6.grid(row=9, column=1)
 e7.grid(row=10, column=1)
 e11.grid(row=11, column=1)
@@ -1185,26 +1281,27 @@ e13.grid(row=18, column=1)
 var1 = IntVar()
 ttk.Checkbutton(master, text="Sanity Check", variable=var1).grid(row=6, column=1, sticky='n')
 var3 = IntVar()
-ttk.Checkbutton(master, text="plot", variable=var3).grid(row=6, column=2, sticky='n')
+ttk.Checkbutton(master, text="Plot", variable=var3).grid(row=6, column=2, sticky='n')
 var2 = IntVar()
-ttk.Checkbutton(master, text="impose planarity", variable=var2).grid(row=6, column=0, sticky='n')
+# ttk.Checkbutton(master, text="Impose Planarity", variable=var2).grid(row=6, column=0, sticky='n')
+
 # For Fringe Spacing: START
 var4 = IntVar()
 ttk.Checkbutton(master, text="Fringe Spacing", variable=var4).grid(row=4, column=2, sticky='n')
 # For Fringe Spacing: END
 
 
-b1 = ttk.Button(master, text="input directory", command=browseDir_e6)
+b1 = ttk.Button(master, text="Input Directory", command=browseDir_e6)
 b1.grid(row=9, column=2)
 
-b2 = ttk.Button(master, text="output directory", command=browseDir_e7)
+b2 = ttk.Button(master, text="Output Directory", command=browseDir_e7)
 b2.grid(row=10, column=2)
 
 # standalone chemistry
-b3 = ttk.Button(master, text="input directory", command=browseDir_e12)
+b3 = ttk.Button(master, text="Input Directory", command=browseDir_e12)
 b3.grid(row=17, column=2)
 
-b4 = ttk.Button(master, text="output directory", command=browseDir_e13)
+b4 = ttk.Button(master, text="Output Directory", command=browseDir_e13)
 b4.grid(row=18, column=2)
 # standalone chemistry
 
@@ -1216,24 +1313,24 @@ add_hydrogen = IntVar()
 ttk.Checkbutton(master, text="Add Hydrogen", variable=add_hydrogen).grid(row=16, column=0, sticky='n')
 
 ignore_charge = IntVar()
-ttk.Checkbutton(master, text="ignore charge", variable=ignore_charge).grid(row=15, column=0, sticky='n')
+ttk.Checkbutton(master, text="Ignore Charge", variable=ignore_charge).grid(row=15, column=0, sticky='n')
 ignore_chiral = IntVar()
-ttk.Checkbutton(master, text="ignore chirality", variable=ignore_chiral).grid(row=15, column=1, sticky='n')
+ttk.Checkbutton(master, text="Ignore Chirality", variable=ignore_chiral).grid(row=15, column=1, sticky='n')
 use_Huckel = IntVar()
-ttk.Checkbutton(master, text="use Huckel connectivity", variable=use_Huckel).grid(row=15, column=2, sticky='n')
+ttk.Checkbutton(master, text="Use Huckel Connectivity", variable=use_Huckel).grid(row=15, column=2, sticky='n')
 Label(master, text="Charge").grid(row=14, column=1, sticky='e')
 v14 = StringVar(master, value='0')
 charge = Entry(master, textvariable=v14)
 charge.grid(row=14, column=2)
 do_smiles = IntVar()
-ttk.Checkbutton(master, text="CHEM calculations", variable=do_smiles).grid(row=14, column=0, sticky='n')
+ttk.Checkbutton(master, text="Chemical Characterization", variable=do_smiles).grid(row=14, column=0, sticky='n')
 
 show_molecule = IntVar()
-ttk.Checkbutton(master, text="show molecule", variable=show_molecule).grid(row=13, column=2, sticky='n')
+ttk.Checkbutton(master, text="Show Molecule", variable=show_molecule).grid(row=13, column=2, sticky='n')
 
 # standalone chemistry
 standalone_molecule = IntVar()
-ttk.Checkbutton(master, text="standalone chemistry only", variable=standalone_molecule).grid(row=13, column=0,
+ttk.Checkbutton(master, text="Chemistry Only", variable=standalone_molecule).grid(row=13, column=0,
                                                                                              sticky='n')
 # standalone chemistry
 
