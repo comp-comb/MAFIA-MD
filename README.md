@@ -1,4 +1,4 @@
-# RingDetection
+# MAFIA-MD: Molecules, Aromatics and Fringe Identification and Analysis from Molecular Dynamics
 To Find out the number of aromatic rings from molecular dynamics simulation. 
 
 # Requirements
@@ -18,11 +18,11 @@ rdkit is required for the chemical representations. Conda is required to install
 
 3. activate the virtual environment:
 
-  * conda activate ./ring
+  * conda activate ./MAFIAMD
 
 4. run the code: 
 
-  * python ring.py
+  * python mafiamd.py
   
 5. to deactivate the virtual environment: 
   * conda deactivate
