@@ -33,6 +33,10 @@ from collections import OrderedDict
 # These global variables are required for Fringe Spacing Functions
 global pointlist  # list of aromatic carbon indices
 global surface_normal  # list of surface_normal values of individual rings
+
+global test_param
+text_param = 0
+
 pointlist = []
 surface_normal = []
 
@@ -50,19 +54,20 @@ def export_fringeSpacingHist(points, file) :
     b = np.unique(np.concatenate(surface_normal, axis=0), axis=0)
     # Creating plot
     # fig = plt.figure(figsize=(10, 5))
-    try:
-        kde = stats.gaussian_kde(a,weights=np.ones(len(a)) / len(a))
+    try :
+        kde = stats.gaussian_kde(a, weights=np.ones(len(a)) / len(a))
 
         xx = np.linspace(3, 6, 1000)
 
         fig, ax = plt.subplots(figsize=(10, 5))
-        density, bins, _ = ax.hist(a,  weights=np.ones(len(a)) / len(a), bins=[3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75, 5, 5.25, 5.5, 5.75, 6],
-                 width=0.15, align="mid")
-        count, _ = np.histogram (a,bins)
+        density, bins, _ = ax.hist(a, weights=np.ones(len(a)) / len(a),
+                                   bins=[3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75, 5, 5.25, 5.5, 5.75, 6],
+                                   width=0.15, align="mid")
+        count, _ = np.histogram(a, bins)
 
         for x, y, num in zip(bins, density, count) :
             if num != 0 :
-                plt.text(x+0.05, y + 0.001, num, fontsize=10, rotation=0)  # x,y,str
+                plt.text(x + 0.05, y + 0.001, num, fontsize=10, rotation=0)  # x,y,str
 
         plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
 
@@ -81,24 +86,22 @@ def export_fringeSpacingHist(points, file) :
         ax.set_xticks(xtick)
         # saving the plot to the output folder
         fig.savefig(e7.get() + '/' + e11.get() + '-Fringe_Spacing_Hist-' + file.split('.')[0] + '.png', format='png',
-                    dpi=600, transparent=True)
-        # fig.show()
-        plt.close(fig)
-    except ValueError: # required because KDE estimation do not work when there is fringe only in one bin
-
+                    transparent=True)
+        fig.show()
+        # plt.close(fig)   #recommended to uncomment this for running batch processing containing logs of trajectory files
+    except ValueError :  # required because KDE estimation do not work when there is fringe only in one bin
 
         fig, ax = plt.subplots(figsize=(10, 5))
-        density, bins, _ = ax.hist(a,  weights=np.ones(len(a)) / len(a), bins=[3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75, 5, 5.25, 5.5, 5.75, 6],
-                 width=0.15, align="mid")
-        count, _ = np.histogram (a,bins)
+        density, bins, _ = ax.hist(a, weights=np.ones(len(a)) / len(a),
+                                   bins=[3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75, 5, 5.25, 5.5, 5.75, 6],
+                                   width=0.15, align="mid")
+        count, _ = np.histogram(a, bins)
 
         for x, y, num in zip(bins, density, count) :
             if num != 0 :
-                plt.text(x+0.05, y + 0.001, num, fontsize=10, rotation=0)  # x,y,str
+                plt.text(x + 0.05, y + 0.001, num, fontsize=10, rotation=0)  # x,y,str
 
         plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
-
-
 
         fig.patch.set_facecolor('white')
         axisbg = '#ababab'
@@ -111,12 +114,9 @@ def export_fringeSpacingHist(points, file) :
         ax.set_xticks(xtick)
         # saving the plot to the output folder
         fig.savefig(e7.get() + '/' + e11.get() + '-Fringe_Spacing_Hist-' + file.split('.')[0] + '.png', format='png',
-                    dpi=600, transparent=True)
-        # fig.show()
-        plt.close(fig)
-
-
-
+                    transparent=True)
+        fig.show()
+        # plt.close(fig)
 
 
 def direction_vector(a, b) :  # unit vector perpendicular to vector a and b
@@ -129,13 +129,16 @@ def direction_vector(a, b) :  # unit vector perpendicular to vector a and b
 
     return (unit_vector)
 
+
 def cross_product(a, b) :
     cross_product = a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]
     return cross_product
 
+
 def dot_product(a, b) :
     dot_product = a[1] * b[1] + a[0] * b[0] * a[2] * b[2]
     return dot_product
+
 
 def vector_angle(a, b) :  # angle between vector a and b
     # May cause some warning sometimes: RuntimeWarning: invalid value encountered in arccos
@@ -144,23 +147,29 @@ def vector_angle(a, b) :  # angle between vector a and b
     # Therefore, the rounded off values are clipped at the limit [-1,1]
 
     return np.absolute(
-        180 * (1 / np.pi) * np.arccos(np.clip((a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (LA.norm(a) * LA.norm(b)),-1,1)))
+        180 * (1 / np.pi) * np.arccos(
+            np.clip((a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (LA.norm(a) * LA.norm(b)), -1, 1)))
+
 
 def angle(a, b) :  # angle between vector a and b
     a = np.absolute(
-        180 * (1 / np.pi) * np.arccos(np.clip(((a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (LA.norm(a) * LA.norm(b))),-1,1)))
-    if a >= 90:
-        return 180-a
-    else:
+        180 * (1 / np.pi) * np.arccos(
+            np.clip(((a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (LA.norm(a) * LA.norm(b))), -1, 1)))
+    if a >= 90 :
+        return 180 - a
+    else :
         return a
-def mean_surface_vector(n_vertices, coord):
-    mini_surface_vector=[]
-    center = np.mean(coord,axis=0)
-    mini_surface_vector.append(direction_vector(center-coord[n_vertices-1], center-coord[0]))
-    for i in range(n_vertices-1):
-        mini_surface_vector.append(direction_vector(center-coord[i], center-coord[i+1]))
-    mean_surface_vector=np.mean(mini_surface_vector,axis=0)
+
+
+def mean_surface_vector(n_vertices, coord) :
+    mini_surface_vector = []
+    center = np.mean(coord, axis=0)
+    mini_surface_vector.append(direction_vector(center - coord[n_vertices - 1], center - coord[0]))
+    for i in range(n_vertices - 1) :
+        mini_surface_vector.append(direction_vector(center - coord[i], center - coord[i + 1]))
+    mean_surface_vector = np.mean(mini_surface_vector, axis=0)
     return mean_surface_vector
+
 
 def fringe_spacing_data(planar_ring, distance) :
     points = []
@@ -203,7 +212,7 @@ def fringe_spacing(pointlist, surface_normal, file) :
         return False
     # calculation of fringe spacing: angle between planes is less than 10º and 3<=distance<=6
     for i in range(len(points)) :
-        for j in range(i+1,len(points) - 1) :
+        for j in range(i + 1, len(points) - 1) :
             if 3 <= np.absolute(LA.norm(points[j + 1] - points[i])) <= 6 :
                 if (vector_angle(surface_vector[j + 1], surface_vector[i]) <= 10) or (
                         170 <= vector_angle(surface_vector[j + 1], surface_vector[i])) :
@@ -233,6 +242,9 @@ class FindRing :
         self.file_name = file_name
         self.fileOut = fileOut
         self.sep = None
+
+        global test_param  # To reject sanity check result from being considered in Fringe Spacing Calculation
+        test_param = None  # To reject sanity check result from being considered in Fringe Spacing Calculation
 
     # read data from the data (.xyz) file
     # the code only considers one single timeStep at a single run
@@ -368,8 +380,8 @@ class FindRing :
         #     x ** 2 + y ** 2 + z ** 2)
         # The above is wrong
 
-        return angle(cross_product([x2-x1,y2-y1,z2-z1],[x3-x1,y3-y1,z3-z1]),cross_product([x2-x,y2-y,z2-z],[x3-x,y3-y,z3-z]))<=self.planeAllowance
-
+        return angle(cross_product([x2 - x1, y2 - y1, z2 - z1], [x3 - x1, y3 - y1, z3 - z1]),
+                     cross_product([x2 - x, y2 - y, z2 - z], [x3 - x, y3 - y, z3 - z])) <= self.planeAllowance
 
     # Check and Return if one cycle is a subset of others (gives idea about molecular rings)
     # molecular rings: rings that contains smaller aromatic rings, e.g. Naphthalene is a molecular ring that has two Benzene rings
@@ -537,6 +549,7 @@ class FindRing :
     def ring_detection(self, division, split, mapper) :
         global pointlist
         global surface_normal
+
         AroCount = 0
         Actual_Ring_count = {}  # individual aromatic rings: For statistical approximation
         Actual_Ring_count_cumulative = {}  # individual aromatic rings: exact number of aromatic rings
@@ -681,7 +694,8 @@ class FindRing :
                         coordinates = distance[index]
                         cord.append(np.asarray(coordinates))
                     Indices = pd.DataFrame(np.asarray(cord))
-                fringe_spacing_data(ring_array, distance)
+                if (test_param == 0) :
+                    fringe_spacing_data(ring_array, distance)
             # index list
 
             r = {}
@@ -738,8 +752,6 @@ class FindRing :
         ########################
         final = {}
 
-
-
         for i in range(len(rings_total)) :
             rings_total[i] = np.sort(rings_total[i])
         rings_total = list(OrderedDict((tuple(x), x) for x in rings_total).values())
@@ -779,6 +791,8 @@ class FindRing :
             wrongData.withdraw()
             messagebox.showerror("Error", "Something is wrong with the datafile")
             return None
+        global test_param  # To reject sanity check result from being considered in Fringe Spacing Calculation
+        test_param = 0  # To reject sanity check result from being considered in Fringe Spacing Calculation
         split, division, mapper = self.split_data_adaptive_cubic(data)
         Indices, ring_count, AroCount = self.ring_detection(division, split, mapper)
         frames = [Indices]
@@ -791,6 +805,7 @@ class FindRing :
 
         self.statistics(data, Indices, result, ring_count, AroCount, CH_Ratio)
         if self.sanity :
+            test_param = 1  # To reject sanity check result from being considered in Fringe Spacing Calculation
             self.statisticsPrint(data, result, CH_Ratio, mapper)
         self.result = result
         self.original, _ = self.get_data()
@@ -938,9 +953,9 @@ def RunAnalysis() :
     try :
         bond_distance_upper = float(e2.get())
         bond_distance_lower = float(e1.get())
-        cluster_size = int(e3.get())
+        cluster_size = 100000  # int(e3.get())   #placeholder for cluster size, A large number to encompass large trajectories
         span = float(e4.get())
-        axis = int(axisin.current())
+        axis = 0  # int(axisin.current())     #placeholder for axis, default to X axis
         split = (e6.get())
         fileOut = (e7.get())
         sep = (e8.get())
@@ -1169,17 +1184,17 @@ def browseDir_e12() :
 
 master: Tk = Tk()
 
+current_working_directory = os.getcwd()
+
 master.title("Parameter Selection")
 Label(master,
       text="Bond Distance (Lower)").grid(row=0)
 Label(master,
       text="Bond Distance (Upper)").grid(row=1)
-Label(master,
-      text="Bin Size (for Sanity Check)").grid(row=2)
+# Label(master, text="Bin Size (for Sanity Check)").grid(row=2)
 Label(master,
       text="Span").grid(row=3)
-Label(master,
-      text="Direction (for Sanity Check)").grid(row=4)
+# Label(master, text="Direction (for Sanity Check)").grid(row=4)
 
 Label(master,
       text="Input Separator").grid(row=7)
@@ -1189,8 +1204,8 @@ Label(master,
       text="Input Directory").grid(row=9)
 Label(master,
       text="Output Directory ").grid(row=10)
-Label(master,
-      text="(e.g. 100)").grid(row=2, column=2)
+# Label(master,
+#       text="(e.g. 100)").grid(row=2, column=2)
 Label(master,
       text="(≥8)").grid(row=3, column=2)
 Label(master,
@@ -1216,22 +1231,23 @@ Label(master,
 # standalone chemistry
 
 
-n = tk.StringVar()
-axisin = ttk.Combobox(master, width=19, textvariable=n)
-axisin['values'] = ('X',
-                    'Y',
-                    'Z')
-axisin.grid(column=1, row=4)
-axisin.current(0)
+# n = tk.StringVar()
+# n = 'X'
+# axisin = ttk.Combobox(master, width=19, textvariable=n)
+# axisin['values'] = ('X',
+#                     'Y',
+#                     'Z')
+# axisin.grid(column=1, row=4)
+# axisin.current(0)
 
 v1 = StringVar(master, value='1.2')
 v2 = StringVar(master, value='1.8')
 v3 = StringVar(master, value='100')
 v4 = StringVar(master, value='8')
 v6 = StringVar(master,
-               value='/Users/khaledmosharrafmukut/tweaks/MDRING/pyCharm/input')
+               value=current_working_directory + '/input')
 v7 = StringVar(master,
-               value='/Users/khaledmosharrafmukut/tweaks/MDRING/pyCharm/output')
+               value=current_working_directory + '/output')
 v8 = StringVar(master, value='space')
 v9 = StringVar(master, value='.xyz')
 v10 = StringVar(master, value='10')
@@ -1240,9 +1256,9 @@ v11 = StringVar(master, value='Result')
 
 # standalone chemistry:start
 v12 = StringVar(master,
-                value='/Users/khaledmosharrafmukut/tweaks/MDRING/pyCharm/input')
+                value=current_working_directory + '/input')
 v13 = StringVar(master,
-                value='/Users/khaledmosharrafmukut/tweaks/MDRING/pyCharm/output')
+                value=current_working_directory + '/output')
 # standalone chemistry:end
 
 e1 = Entry(master, textvariable=v1)
@@ -1263,7 +1279,7 @@ e13 = Entry(master, textvariable=v13)
 
 e1.grid(row=0, column=1)
 e2.grid(row=1, column=1)
-e3.grid(row=2, column=1)
+# e3.grid(row=2, column=1)   #bin size for sanity check
 e4.grid(row=3, column=1)
 e8.grid(row=7, column=1)
 e9.grid(row=8, column=1)
@@ -1287,7 +1303,7 @@ var2 = IntVar()
 
 # For Fringe Spacing: START
 var4 = IntVar()
-ttk.Checkbutton(master, text="Fringe Spacing", variable=var4).grid(row=4, column=2, sticky='n')
+ttk.Checkbutton(master, text="Fringe Spacing", variable=var4).grid(row=6, column=0, sticky='n')
 # For Fringe Spacing: END
 
 
@@ -1331,7 +1347,7 @@ ttk.Checkbutton(master, text="Show Molecule", variable=show_molecule).grid(row=1
 # standalone chemistry
 standalone_molecule = IntVar()
 ttk.Checkbutton(master, text="Chemistry Only", variable=standalone_molecule).grid(row=13, column=0,
-                                                                                             sticky='n')
+                                                                                  sticky='n')
 # standalone chemistry
 
 format = tk.StringVar()
