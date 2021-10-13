@@ -1,4 +1,5 @@
 import copy
+import time
 import tkinter as tk
 from tkinter import *
 from tkinter import filedialog, Tk
@@ -404,12 +405,12 @@ class FindRing :
 
         print("--------------------------------------------------------------------------------------------------")
         print("C/H Ratio:\t", CH_Ratio)
-        print("Total Aromatic Carbon: \t", len(result))
+        print("Total Alicyclic Carbon: \t", len(result))
         print("Total Aliphatic Carbon Number: \t", data.shape[0] - len(result))
         print("Total Existing Rings\t", aromatic_count)
         # print("Total Planar Rings\t", plane_count)
         # print("Total Molecular Rings\t", molecular_count)
-        print("Percentage of Aromatic components\t:", len(result) / data.shape[0])
+        print("Percentage of Alicyclic components\t:", len(result) / data.shape[0])
         print("Percentage of Aliphatic components\t:", 1 - len(result) / data.shape[0])
 
     # Sanity check run function
@@ -456,12 +457,12 @@ class FindRing :
 
         print("--------------------------------------------------------------------------------------------------")
         print("C/H Ratio:\t", CH_Ratio)
-        print("Total Aromatic Carbon: \t", len(result))
+        print("Total Alicyclic Carbon: \t", len(result))
         print("Total Aliphatic Carbon Number: \t", data.shape[0] - len(result))
         print("Total Existing Rings\t", aromatic_count)
         # print("Total Planar Rings\t", plane_count)
         # print("Total Molecular Rings\t", molecular_count)
-        print("Percentage of Aromatic components\t:", len(result) / data.shape[0])
+        print("Percentage of Alicyclic components\t:", len(result) / data.shape[0])
         print("Percentage of Aliphatic components\t:", 1 - len(result) / data.shape[0])
 
     # Adaptive split scheme to cubic decomposition
@@ -784,6 +785,8 @@ class FindRing :
 
     # Putting it all together for FindRing class
     def main(self) :
+
+        # tic = time.perf_counter()
         try :
             data, CH_Ratio = self.get_data()
         except :
@@ -809,6 +812,10 @@ class FindRing :
             self.statisticsPrint(data, result, CH_Ratio, mapper)
         self.result = result
         self.original, _ = self.get_data()
+
+        # toc = time.perf_counter()
+        # print(f"Time for ring detection:  {toc - tic:0.4f} seconds")
+
 
 
 # For using a configuration file in stead of the GUI
@@ -1027,7 +1034,10 @@ def RunAnalysis() :
                 print(
                     '--------------------------------------------------------------------------------------------------')
                 print("\n\nFringe spacing: Fringe Spacing vs Angle\n")
+                # tic_fringe=time.perf_counter()
                 fringe_spacing(pointlist, surface_normal, FR.file)  # calculation of fringe spacing
+                # toc_fringe=time.perf_counter()
+                # print(f"Time for Fringe spacing = {toc_fringe - tic_fringe:0.4f} seconds")
                 print("End of Fringe spacing\n\n")
                 print(
                     '--------------------------------------------------------------------------------------------------')
@@ -1046,10 +1056,14 @@ def RunAnalysis() :
                 print(
                     '--------------------------------------------------------------------------------------------------')
                 smile_file = FR.fileOut + '/' + e11.get() + '_' + FR.file
+                # tic_chem = time.perf_counter()
                 smiles = xyz2mol.main(smile_file, ignore_charge.get(), None, ignore_chiral.get(),
                                       use_Huckel.get(),
                                       format.get(),
                                       int(charge.get()))
+                # toc_chem = time.perf_counter()
+
+                # print(f"Time for Chemistry = {toc_chem - tic_chem:0.4f} seconds")
                 # Control the quality of the output chemistry images
                 DrawingOptions.atomLabelFontSize = 55
                 DrawingOptions.dotsPerAngstrom = 100
