@@ -1,8 +1,13 @@
 #!/bin/bash
 
+# bash script to convert a large trajectory file (xyz) containing multiple timesteps into a number of small xyz file containing only one timestep.
+# the output files will be stored in a separated directory named "split"
+
+# use: ./splitting.sh <name_of_large_trajectory_file>
+
 grep -n Atoms $1| cut -d : -f 1 >lines 
 grep -n Atoms $1 | cut -d : -f 3 >times
-#grep Atom Book1.csv| cut -d , -f 3 >times
+
 paste lines times > info
 lineNumber=()
 Timestep=()
