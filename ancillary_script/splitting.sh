@@ -2,7 +2,7 @@
 
 grep -n Atoms $1| cut -d : -f 1 >lines 
 grep -n Atoms $1 | cut -d : -f 3 >times
-#grep Atom Book1.csv| cut -d , -f 3 >times
+
 paste lines times > info
 lineNumber=()
 Timestep=()
@@ -16,6 +16,7 @@ while IFS= read -r line; do
     Timestep+=("$line")
 done < times
 
+[ ! -d "./split" ] && mkdir split
 
 a=$(cat lines|wc -l)
 b=$(cat $1 |wc -l)
@@ -34,3 +35,4 @@ do
         sed -n ' '$x' , '$d' p ' $1 >./split/split_time_${name}.xyz
     fi
 done
+rm info lines times

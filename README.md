@@ -1,4 +1,4 @@
-# MAFIA-MD: Molecules, Aromatics and Fringe Identification and Analysis from Molecular Dynamics
+# MAFIA-MD: Molecular Arrangements and Fringe Identification and Analysis from Molecular Dynamics
 To Find out the number of aromatic rings from molecular dynamics simulation. 
 
 # Requirements
