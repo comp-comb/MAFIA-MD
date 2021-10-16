@@ -797,8 +797,8 @@ class FindRing :
         try :
             data, CH_Ratio = self.get_data()
         except :
-            wrongData = Tk()
-            wrongData.withdraw()
+            # wrongData = Tk()
+            # wrongData.withdraw()
             messagebox.showerror("Error", "Something is wrong with the datafile")
             return None
         global test_param  # To reject sanity check result from being considered in Fringe Spacing Calculation
@@ -976,8 +976,8 @@ def RunAnalysis() :
         planarAllowance = float(e10.get())
 
     except :
-        error: Tk = Tk()
-        error.withdraw()
+        # error: Tk = Tk()
+        # error.withdraw()
         messagebox.showerror("Error", "Wrong Set of Input Parameters")
         return None
 
@@ -990,6 +990,10 @@ def RunAnalysis() :
         sep = ' '
     directory = os.fsencode(split)
     count = 1
+
+    if len(list(listdir_nohidden(directory))) == 0 :
+        messagebox.showerror("Error", "No acceptable file in the directory!!")
+        return None
 
     # standalone chemistry
     if not standalone_molecule.get() :
