@@ -19,7 +19,7 @@ from rdkit.Chem import Draw
 from rdkit.Chem.Draw import DrawingOptions, MolDrawing
 
 # External tool to calculate chemical bond information
-import xyz2mol
+from external_tool import xyz2mol
 
 matplotlib.use('TkAgg')
 matplotlib.interactive(True)
@@ -1265,7 +1265,7 @@ v2 = StringVar(master, value='1.8')
 v3 = StringVar(master, value='100')
 v4 = StringVar(master, value='8')
 v6 = StringVar(master,
-               value=current_working_directory + '/input')
+               value=current_working_directory + '/input/set1_validation_demo')
 v7 = StringVar(master,
                value=current_working_directory + '/output')
 v8 = StringVar(master, value='space')
@@ -1276,7 +1276,7 @@ v11 = StringVar(master, value='Result')
 
 # standalone chemistry:start
 v12 = StringVar(master,
-                value=current_working_directory + '/input')
+                value=current_working_directory + '/input/set1_validation_demo')
 v13 = StringVar(master,
                 value=current_working_directory + '/output')
 # standalone chemistry:end
