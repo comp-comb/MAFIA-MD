@@ -1,6 +1,9 @@
 """
-Module for generating rdkit molobj/smiles/molecular graph from free atoms
+Modified by K.M. Mukut from the original xyz2mol to work with MAFIA-MD.
 
+Original Repository Link: https://github.com/jensengroup/xyz2mol/
+
+xyz2mol: Module for generating rdkit molobj/smiles/molecular graph from free atoms
 Implementation by Jan H. Jensen, based on the paper
 
     Yeonjoon Kim and Woo Youn Kim
