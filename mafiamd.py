@@ -6,7 +6,6 @@ MAFIA-MD is a post-processing utility to capture ring structures from molecular 
 reactive molecular dynamics simulation of Hydrocarbons.
 """
 import copy
-import time
 import tkinter as tk
 from tkinter import *
 from tkinter import filedialog, Tk
@@ -19,7 +18,7 @@ from rdkit.Chem import Draw
 from rdkit.Chem.Draw import DrawingOptions, MolDrawing
 
 # External tool to calculate chemical bond information
-from external_tool import xyz2mol
+import xyz2mol
 
 matplotlib.use('TkAgg')
 matplotlib.interactive(True)
@@ -88,7 +87,7 @@ def export_fringeSpacingHist(points, file) :
         ax.set_title(file.split('.')[0])
         ax.set_xlabel('Fringe Spacing (Å)')
         ax.set_ylabel('Percentage of Fringes')
-        ax2.set_ylabel('Kernel Density Estimation (KDE)\n of the Distribution', color='red')
+        ax2.set_ylabel('Probability Density Function (PDF)\n of the Distribution', color='red')
         xtick = (np.arange(3, 6.25, step=0.25))
         plt.xticks(fontsize=14)
         ax.set_xticks(xtick)
@@ -119,10 +118,14 @@ def export_fringeSpacingHist(points, file) :
 
         xtick = (np.arange(3, 6.25, step=0.25))
         plt.xticks(fontsize=14)
+
+        # fig.tight_layout()
+        # fig.subplots_adjust(bottom=0.13)  # Add space at bottom
+
         ax.set_xticks(xtick)
         # saving the plot to the output folder
         fig.savefig(e7.get() + '/' + e11.get() + '-Fringe_Spacing_Hist-' + file.split('.')[0] + '.png', format='png',
-                    transparent=True)
+                    transparent=True, bbox_inches='tight')
         fig.show()
         # plt.close(fig)
 
@@ -517,7 +520,7 @@ class FindRing :
         division = len(better_split)
 
         print("--------------------------------------------------------------------------------------------------")
-        print("Starting code for Adaptive Run", )
+        print("Starting code for Adaptive Run")
         print("--------------------------------------------------------------------------------------------------")
         return better_split, division, mapper
 
@@ -963,9 +966,13 @@ def MolToMPL(mol, size=(300, 300), kekulize=True, wedgeBonds=True, imageType=Non
 def RunAnalysis() :
     global pointlist
     global surface_normal
+
     try :
         bond_distance_upper = float(e2.get())
-        bond_distance_lower = float(e1.get())
+        if len(e1.get()) >= 1 :
+            bond_distance_lower = float(e1.get())
+        else :
+            bond_distance_lower = 0.0
         cluster_size = 100000  # int(e3.get())   #placeholder for cluster size, A large number to encompass large trajectories
         span = float(e4.get())
         axis = 0  # int(axisin.current())     #placeholder for axis, default to X axis
@@ -1269,7 +1276,7 @@ v2 = StringVar(master, value='1.8')
 v3 = StringVar(master, value='100')
 v4 = StringVar(master, value='8')
 v6 = StringVar(master,
-               value=current_working_directory + '/input/set1_validation_demo')
+               value=current_working_directory + '/input')
 v7 = StringVar(master,
                value=current_working_directory + '/output')
 v8 = StringVar(master, value='space')
@@ -1280,7 +1287,7 @@ v11 = StringVar(master, value='Result')
 
 # standalone chemistry:start
 v12 = StringVar(master,
-                value=current_working_directory + '/input/set1_validation_demo')
+                value=current_working_directory + '/input')
 v13 = StringVar(master,
                 value=current_working_directory + '/output')
 # standalone chemistry:end
