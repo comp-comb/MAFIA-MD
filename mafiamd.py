@@ -87,7 +87,7 @@ def export_fringeSpacingHist(points, file) :
         ax.set_title(file.split('.')[0])
         ax.set_xlabel('Fringe Spacing (Å)')
         ax.set_ylabel('Percentage of Fringes')
-        ax2.set_ylabel('Kernel Density Estimation (KDE)\n of the Distribution', color='red')
+        ax2.set_ylabel('Probability Density Function (PDF)\n of the Distribution', color='red')
         xtick = (np.arange(3, 6.25, step=0.25))
         plt.xticks(fontsize=14)
         ax.set_xticks(xtick)
